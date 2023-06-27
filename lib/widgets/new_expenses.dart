@@ -1,13 +1,16 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../models/expense.dart' as expense;
+import '../models/expense.dart';
 
 final formtter = DateFormat.yMd();
 
 class NewExpenses extends StatefulWidget {
-  const NewExpenses({super.key});
+  const NewExpenses({super.key, required this.onAddExpense});
+
+  final void Function(Expense expense) onAddExpense;
+
   @override
   State<StatefulWidget> createState() {
     return _NewExpensesState();
@@ -19,6 +22,41 @@ class _NewExpensesState extends State<NewExpenses> {
   final _amountController = TextEditingController();
   DateTime? _selectedDate;
   var _selectedCategory = expense.Category.leisure;
+
+  void _selectedExpenseData() {
+    final enterAmount = double.tryParse(_amountController.text);
+    final isAmountInvalid = enterAmount == null || enterAmount <= 0;
+    if (_titleController.text.trim().isEmpty ||
+        isAmountInvalid ||
+        _selectedDate == null) {
+      showDialog(
+          context: context,
+          builder: (ctx) {
+            return AlertDialog(
+              title: const Text('Invalid Inputs'),
+              content: const Text('Please enter valid amount,title and date'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Okay'),
+                ),
+              ],
+            );
+          });
+      return;
+    }
+    widget.onAddExpense(
+      Expense(
+        title: _titleController.text,
+        amount: enterAmount,
+        dateTime: _selectedDate!,
+        category: _selectedCategory,
+      ),
+    );
+    Navigator.pop(context);
+  }
 
   void _pickDateTime() async {
     final now = DateTime.now();
@@ -43,7 +81,7 @@ class _NewExpensesState extends State<NewExpenses> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 48, 16, 16),
       child: Column(
         children: [
           TextField(
@@ -124,10 +162,7 @@ class _NewExpensesState extends State<NewExpenses> {
                 ),
               ),
               ElevatedButton(
-                  onPressed: () {
-                    print(_titleController.text);
-                    print(_amountController.text);
-                  },
+                  onPressed: _selectedExpenseData,
                   child: const Text(
                     'Save Expense',
                   )),
